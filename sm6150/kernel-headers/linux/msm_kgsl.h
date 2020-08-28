@@ -212,6 +212,7 @@ enum kgsl_timestamp_type {
 #define KGSL_PROP_SECURE_CTXT_SUPPORT 0x24
 #define KGSL_PROP_SPEED_BIN 0x25
 #define KGSL_PROP_GAMING_BIN 0x26
+#define KGSL_PROP_CONTEXT_PROPERTY 0x28
 struct kgsl_shadowprop {
   unsigned long gpuaddr;
   size_t size;
@@ -244,6 +245,17 @@ struct kgsl_gpmu_version {
   unsigned int minor;
   unsigned int features;
 };
+struct kgsl_context_property {
+  __u64 data;
+  __u32 size;
+  __u32 type;
+  __u32 contextid;
+};
+struct kgsl_context_property_fault {
+  __s32 faults;
+  __u32 timestamp;
+};
+#define KGSL_CONTEXT_PROP_FAULTS 1
 #define KGSL_PERFCOUNTER_GROUP_CP 0x0
 #define KGSL_PERFCOUNTER_GROUP_RBBM 0x1
 #define KGSL_PERFCOUNTER_GROUP_PC 0x2

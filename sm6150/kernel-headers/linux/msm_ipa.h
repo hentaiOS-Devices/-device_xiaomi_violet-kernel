@@ -18,6 +18,7 @@
  ****************************************************************************/
 #ifndef _MSM_IPA_H_
 #define _MSM_IPA_H_
+#include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <sys/stat.h>
@@ -108,6 +109,8 @@
 #define IPA_IOCTL_FNR_COUNTER_ALLOC 74
 #define IPA_IOCTL_FNR_COUNTER_DEALLOC 75
 #define IPA_IOCTL_FNR_COUNTER_QUERY 76
+#define IPA_IOCTL_GET_NAT_IN_SRAM_INFO 77
+#define IPA_IOCTL_APP_CLOCK_VOTE 78
 #define IPA_HDR_MAX_SIZE 64
 #define IPA_RESOURCE_NAME_MAX 32
 #define IPA_NUM_PROPS_MAX 35
@@ -148,6 +151,9 @@
 #define IPA_FLT_L2TP_INNER_IP_TYPE (1ul << 25)
 #define IPA_FLT_L2TP_INNER_IPV4_DST_ADDR (1ul << 26)
 #define IPA_FLT_IS_PURE_ACK (1ul << 27)
+#define IPA_FLT_VLAN_ID (1ul << 28)
+#define IPA_FLT_MAC_SRC_ADDR_802_1Q (1ul << 29)
+#define IPA_FLT_MAC_DST_ADDR_802_1Q (1ul << 30)
 #define IPA_MAX_PDN_NUM 5
 enum ipa_client_type {
   IPA_CLIENT_HSIC1_PROD = 0,
@@ -264,6 +270,7 @@ enum ipa_client_type {
 #define IPA_CLIENT_MHI_PRIME_DPL_PROD IPA_CLIENT_MHI_PRIME_DPL_PROD
 #define IPA_CLIENT_IS_APPS_CONS(client) ((client) == IPA_CLIENT_APPS_LAN_CONS || (client) == IPA_CLIENT_APPS_WAN_CONS || (client) == IPA_CLIENT_APPS_WAN_COAL_CONS)
 #define IPA_CLIENT_IS_USB_CONS(client) ((client) == IPA_CLIENT_USB_CONS || (client) == IPA_CLIENT_USB2_CONS || (client) == IPA_CLIENT_USB3_CONS || (client) == IPA_CLIENT_USB_DPL_CONS || (client) == IPA_CLIENT_USB4_CONS)
+#define IPA_CLIENT_IS_WAN_CONS(client) ((client) == IPA_CLIENT_APPS_WAN_CONS || (client) == IPA_CLIENT_APPS_WAN_COAL_CONS)
 #define IPA_CLIENT_IS_WLAN_CONS(client) ((client) == IPA_CLIENT_WLAN1_CONS || (client) == IPA_CLIENT_WLAN2_CONS || (client) == IPA_CLIENT_WLAN3_CONS || (client) == IPA_CLIENT_WLAN4_CONS)
 #define IPA_CLIENT_IS_ODU_CONS(client) ((client) == IPA_CLIENT_ODU_EMB_CONS || (client) == IPA_CLIENT_ODU_TETH_CONS)
 #define IPA_CLIENT_IS_Q6_CONS(client) ((client) == IPA_CLIENT_Q6_LAN_CONS || (client) == IPA_CLIENT_Q6_WAN_CONS || (client) == IPA_CLIENT_Q6_DUN_CONS || (client) == IPA_CLIENT_Q6_DECOMP_CONS || (client) == IPA_CLIENT_Q6_DECOMP2_CONS || (client) == IPA_CLIENT_Q6_LTE_WIFI_AGGR_CONS || (client) == IPA_CLIENT_Q6_UL_NLO_DATA_CONS || (client) == IPA_CLIENT_Q6_UL_NLO_ACK_CONS || (client) == IPA_CLIENT_Q6_QBAP_STATUS_CONS || (client) == IPA_CLIENT_Q6_AUDIO_DMA_MHI_CONS)
@@ -279,11 +286,18 @@ enum ipa_client_type {
 #define IPA_CLIENT_IS_TEST_PROD(client) ((client) == IPA_CLIENT_TEST_PROD || (client) == IPA_CLIENT_TEST1_PROD || (client) == IPA_CLIENT_TEST2_PROD || (client) == IPA_CLIENT_TEST3_PROD || (client) == IPA_CLIENT_TEST4_PROD)
 #define IPA_CLIENT_IS_TEST_CONS(client) ((client) == IPA_CLIENT_TEST_CONS || (client) == IPA_CLIENT_TEST1_CONS || (client) == IPA_CLIENT_TEST2_CONS || (client) == IPA_CLIENT_TEST3_CONS || (client) == IPA_CLIENT_TEST4_CONS)
 #define IPA_CLIENT_IS_TEST(client) (IPA_CLIENT_IS_TEST_PROD(client) || IPA_CLIENT_IS_TEST_CONS(client))
+enum ipa3_nat_mem_in {
+  IPA_NAT_MEM_IN_DDR = 0,
+  IPA_NAT_MEM_IN_SRAM = 1,
+  IPA_NAT_MEM_IN_MAX
+};
+#define IPA_VALID_NAT_MEM_IN(t) ((t) >= IPA_NAT_MEM_IN_DDR && (t) < IPA_NAT_MEM_IN_MAX)
 enum ipa_ip_type {
   IPA_IP_v4,
   IPA_IP_v6,
   IPA_IP_MAX
 };
+#define VALID_IPA_IP_TYPE(t) ((t) >= IPA_IP_v4 && (t) < IPA_IP_MAX)
 enum ipa_rule_type {
   IPA_RULE_HASHABLE,
   IPA_RULE_NON_HASHABLE,
@@ -462,6 +476,7 @@ struct ipa_rule_attrib {
       uint32_t dst_addr_mask[4];
     } v6;
   } u;
+  uint16_t vlan_id;
 };
 #define IPA_IPFLTR_NUM_MEQ_32_EQNS 2
 #define IPA_IPFLTR_NUM_IHL_MEQ_32_EQNS 2
@@ -563,9 +578,10 @@ enum ipa_hdr_proc_type {
   IPA_HDR_PROC_802_3_TO_ETHII,
   IPA_HDR_PROC_802_3_TO_802_3,
   IPA_HDR_PROC_L2TP_HEADER_ADD,
-  IPA_HDR_PROC_L2TP_HEADER_REMOVE
+  IPA_HDR_PROC_L2TP_HEADER_REMOVE,
+  IPA_HDR_PROC_ETHII_TO_ETHII_EX
 };
-#define IPA_HDR_PROC_MAX (IPA_HDR_PROC_L2TP_HEADER_REMOVE + 1)
+#define IPA_HDR_PROC_MAX (IPA_HDR_PROC_ETHII_TO_ETHII_EX + 1)
 struct ipa_rt_rule {
   enum ipa_client_type dst;
   uint32_t hdr_hdl;
@@ -625,6 +641,11 @@ struct ipa_l2tp_hdr_proc_ctx_params {
   uint8_t is_dst_pipe_valid;
   enum ipa_client_type dst_pipe;
 };
+struct ipa_eth_II_to_eth_II_ex_procparams {
+  uint32_t input_ethhdr_negative_offset : 8;
+  uint32_t output_ethhdr_negative_offset : 8;
+  uint32_t reserved : 16;
+};
 #define L2TP_USER_SPACE_SPECIFY_DST_PIPE
 struct ipa_hdr_proc_ctx_add {
   enum ipa_hdr_proc_type type;
@@ -632,6 +653,7 @@ struct ipa_hdr_proc_ctx_add {
   uint32_t proc_ctx_hdl;
   int status;
   struct ipa_l2tp_hdr_proc_ctx_params l2tp_params;
+  struct ipa_eth_II_to_eth_II_ex_procparams generic_params;
 };
 #define IPA_L2TP_HDR_PROC_SUPPORT
 struct ipa_ioc_add_hdr_proc_ctx {
@@ -895,6 +917,8 @@ struct ipa_ioc_ext_intf_prop {
   uint8_t is_xlat_rule;
   uint32_t rule_id;
   uint8_t is_rule_hashable;
+#define IPA_V6_UL_WL_FIREWALL_HANDLE
+  uint8_t replicate_needed;
 };
 struct ipa_ioc_query_intf_ext_props {
   char name[IPA_RESOURCE_NAME_MAX];
@@ -930,6 +954,8 @@ struct ipa_ioc_v4_nat_init {
   uint16_t table_entries;
   uint16_t expn_table_entries;
   uint32_t ip_addr;
+  uint8_t mem_type;
+  uint8_t focus_change;
 };
 struct ipa_ioc_ipv6ct_init {
   uint32_t base_table_offset;
@@ -944,6 +970,7 @@ struct ipa_ioc_v4_nat_del {
 };
 struct ipa_ioc_nat_ipv6ct_table_del {
   uint8_t table_index;
+  uint8_t mem_type;
 };
 struct ipa_ioc_nat_dma_one {
   uint8_t table_index;
@@ -953,6 +980,7 @@ struct ipa_ioc_nat_dma_one {
 };
 struct ipa_ioc_nat_dma_cmd {
   uint8_t entries;
+  uint8_t mem_type;
   struct ipa_ioc_nat_dma_one dma[0];
 };
 struct ipa_ioc_nat_pdn_entry {
@@ -1206,6 +1234,8 @@ struct ipa_odl_modem_config {
 #define IPA_IOC_FNR_COUNTER_ALLOC _IOWR(IPA_IOC_MAGIC, IPA_IOCTL_FNR_COUNTER_ALLOC, struct ipa_ioc_flt_rt_counter_alloc)
 #define IPA_IOC_FNR_COUNTER_DEALLOC _IOWR(IPA_IOC_MAGIC, IPA_IOCTL_FNR_COUNTER_DEALLOC, int)
 #define IPA_IOC_FNR_COUNTER_QUERY _IOWR(IPA_IOC_MAGIC, IPA_IOCTL_FNR_COUNTER_QUERY, struct ipa_ioc_flt_rt_query)
+#define IPA_IOC_GET_NAT_IN_SRAM_INFO _IOWR(IPA_IOC_MAGIC, IPA_IOCTL_GET_NAT_IN_SRAM_INFO, struct ipa_nat_in_sram_info)
+#define IPA_IOC_APP_CLOCK_VOTE _IOWR(IPA_IOC_MAGIC, IPA_IOCTL_APP_CLOCK_VOTE, uint32_t)
 #define TETH_BRIDGE_IOC_MAGIC 0xCE
 #define TETH_BRIDGE_IOCTL_SET_BRIDGE_MODE 0
 #define TETH_BRIDGE_IOCTL_SET_AGGR_PARAMS 1
@@ -1243,6 +1273,16 @@ struct teth_ioc_set_bridge_mode {
 struct teth_ioc_aggr_params {
   struct teth_aggr_params aggr_params;
   uint16_t lcid;
+};
+struct ipa_nat_in_sram_info {
+  uint32_t sram_mem_available_for_nat;
+  uint32_t nat_table_offset_into_mmap;
+  uint32_t best_nat_in_sram_size_rqst;
+};
+enum ipa_app_clock_vote_type {
+  IPA_APP_CLK_DEVOTE = 0,
+  IPA_APP_CLK_VOTE = 1,
+  IPA_APP_CLK_RESET_VOTE = 2,
 };
 #define TETH_BRIDGE_IOC_SET_BRIDGE_MODE _IOW(TETH_BRIDGE_IOC_MAGIC, TETH_BRIDGE_IOCTL_SET_BRIDGE_MODE, struct teth_ioc_set_bridge_mode *)
 #define TETH_BRIDGE_IOC_SET_AGGR_PARAMS _IOW(TETH_BRIDGE_IOC_MAGIC, TETH_BRIDGE_IOCTL_SET_AGGR_PARAMS, struct teth_ioc_aggr_params *)

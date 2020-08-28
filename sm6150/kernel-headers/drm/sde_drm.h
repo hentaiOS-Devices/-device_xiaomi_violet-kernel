@@ -85,7 +85,9 @@ struct sde_drm_de_v1 {
   int16_t adjust_b[SDE_MAX_DE_CURVES];
   int16_t adjust_c[SDE_MAX_DE_CURVES];
 };
+#define SDE_DYN_EXP_DISABLE 0x1
 #define SDE_DRM_QSEED3LITE
+#define SDE_DRM_QSEED4
 struct sde_drm_scaler_v2 {
   uint32_t enable;
   uint32_t dir_en;
@@ -115,6 +117,8 @@ struct sde_drm_scaler_v2 {
   struct sde_drm_de_v1 de;
   uint32_t dir_weight;
   uint32_t unsharp_mask_blend;
+  uint32_t de_blend;
+  uint32_t flags;
 };
 #define SDE_MAX_DS_COUNT 2
 #define SDE_DRM_DESTSCALER_ENABLE 0x1

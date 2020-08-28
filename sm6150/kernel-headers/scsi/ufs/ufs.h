@@ -81,7 +81,4 @@ enum query_opcode {
   UPIU_QUERY_OPCODE_TOGGLE_FLAG = 0x8,
   UPIU_QUERY_OPCODE_MAX,
 };
-#define UPIU_QUERY_OPCODE_HIGH_HPB 0x5500
-#define UPIU_QUERY_OPCODE_HIGH(opcode) ((opcode) >> 16)
-#define UPIU_QUERY_OPCODE_LOW(opcode) ((opcode) & 0xffff)
 #endif

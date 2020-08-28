@@ -19,6 +19,7 @@
 #ifndef __UAPI_CAM_ICP_H__
 #define __UAPI_CAM_ICP_H__
 #include "cam_defs.h"
+#include "cam_cpas.h"
 #define CAM_ICP_DEV_TYPE_A5 1
 #define CAM_ICP_DEV_TYPE_IPE 2
 #define CAM_ICP_DEV_TYPE_BPS 3
@@ -63,6 +64,15 @@
 #define CAM_ICP_CMD_GENERIC_BLOB_CFG_IO 0x2
 #define CAM_ICP_CMD_GENERIC_BLOB_FW_MEM_MAP 0x3
 #define CAM_ICP_CMD_GENERIC_BLOB_FW_MEM_UNMAP 0x4
+#define CAM_ICP_CMD_GENERIC_BLOB_CLK_V2 0x5
+struct cam_icp_clk_bw_request_v2 {
+  uint64_t budget_ns;
+  uint32_t frame_cycles;
+  uint32_t rt_flag;
+  uint32_t reserved;
+  uint32_t num_paths;
+  struct cam_axi_per_path_bw_vote axi_path[1];
+};
 struct cam_icp_clk_bw_request {
   uint64_t budget_ns;
   uint32_t frame_cycles;
